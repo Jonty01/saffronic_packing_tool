@@ -1,5 +1,4 @@
 import tkinter
-import tkinter as tk
 from tkinter import Button, Label, filedialog
 
 window = tkinter.Tk()
