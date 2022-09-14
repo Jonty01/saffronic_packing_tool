@@ -42,6 +42,7 @@ def DestinationBrowse():
     which files are to be copied using the
     filedialog.askopendirectory() method.
     Setting initialdir argument is optional"""
+    window.destinationText.delete(0, END)
     destinationdirectory = filedialog.askdirectory(initialdir="C:/")
 
     # Displaying the selected directory in the
