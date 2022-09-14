@@ -1,7 +1,8 @@
 """Create the window and widgets"""
 
 import shutil
-from tkinter import Tk, filedialog, StringVar, IntVar, Button, Entry, Checkbutton, W
+import os
+from tkinter import END, Tk, filedialog, StringVar, IntVar, Button, Entry, Checkbutton, W
 
 copy_cases = ["Copy Source Images", "Copy Renders"]
 check = []
@@ -25,12 +26,14 @@ def SourceBrowse():
     filedialog.askopenfilenames() method. Setting
     initialdir argument is optional Since multiple
     files may be selected, converting the selection
-    to list using list()"""
+    to list using list(), also deleting the previous entry already there in the textbox"""
+
+    window.sourceText.delete(0, END)
     window.file_list = list(filedialog.askopenfilenames(initialdir="C:/"))
 
     # Displaying the selected files in the window.sourceText
     # Entry using window.sourceText.insert()
-    window.sourceText.insert("1", window.file_list)
+    window.sourceText.insert("0", window.file_list)
 
 
 def DestinationBrowse():
