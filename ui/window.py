@@ -2,10 +2,10 @@
 
 import shutil
 import os
+from tkinter import END, Tk, filedialog, messagebox, StringVar, IntVar, Button, Entry, Checkbutton, W
 import openpyxl
-from tkinter import END, Tk, filedialog, StringVar, IntVar, Button, Entry, Checkbutton, W
 
-
+# List Of Checkbox Items
 copy_cases = ["Copy Source Images", "Copy Renders"]
 check = []
 
@@ -108,7 +108,7 @@ def CopyFile():
                 shutil.copy(f, destination_location)
 
     # check in one loop
-    # messagebox.showinfo("SUCCESSFUL")
+    messagebox.showinfo("Copied", "Files copied successfully")
 
 
 def MoveFile():
