@@ -1,7 +1,21 @@
 """Create the window and widgets"""
 
-from subprocess import call
-from tkinter import END, Tk, filedialog, messagebox, StringVar, IntVar, Button, Entry, Checkbutton, W
+import subprocess
+from tkinter import (
+    END,
+    Tk,
+    filedialog,
+    messagebox,
+    StringVar,
+    IntVar,
+    Button,
+    Entry,
+    Checkbutton,
+    W,
+)
+import csv
+from datetime import datetime
+from pathlib import Path
 import openpyxl
 
 # List Of Checkbox Items
@@ -23,9 +37,14 @@ destinationLocation = StringVar()
 
 
 def source_browse():
+    """Opening the file-dialog prompting the user to
+    select a .xlsx file"""
     window.sourceText.delete(0, END)
-    window.file_list=list(filedialog.askopenfilenames(filetypes=[("Excel Files", "*.xlsx")]))
-    window.sourceText.insert('0', window.file_list)
+    window.file_list = list(
+        filedialog.askopenfilenames(filetypes=[("Excel Files", "*.xlsx")])
+    )
+    window.sourceText.insert("0", window.file_list)
+
 
 def destination_browse():
     """Opening the file-dialog directory prompting
@@ -43,6 +62,42 @@ def destination_browse():
     window.destinationText.insert("0", destinationdirectory)
 
 
+def log_result(src, destination_location, result):
+    """Log results of all operations in a csv file"""
+
+    log_dir = Path(window.file_list[0]).parent
+    # if file does not exist, create it
+    if Path(f"{log_dir}/.saffronic_log.csv").is_file() is False:
+        with open(f"{log_dir}/.saffronic_log.csv", "w", encoding="utf-8") as log_file:
+            csv_writer = csv.writer(log_file)
+            csv_writer.writerow(
+                [
+                    "Timestamp",
+                    "Source",
+                    "Destination",
+                    "Return code",
+                    "Stdout",
+                    "Stderr",
+                ]
+            )
+
+    # open a csv file in the directory where spreadsheet is located
+    with open(
+        f"{log_dir}/.saffronic_log.csv", "a", encoding="utf-8", newline=""
+    ) as log_file:
+        csv_writer = csv.writer(log_file)
+        csv_writer.writerow(
+            [
+                datetime.now().isoformat(),
+                src,
+                destination_location,
+                result.returncode,
+                result.stdout,
+                result.stderr,
+            ]
+        )
+
+
 def copy_file():
     """Retrieving the source file selected by the
     user in the SourceBrowse() and storing it in a
@@ -51,26 +106,32 @@ def copy_file():
     storing in destination_location
     """
     file_list = window.file_list
-    dataframe=openpyxl.load_workbook(file_list[0])  #reads only first excel file
-    dataframe1=dataframe.active
+    dataframe = openpyxl.load_workbook(file_list[0])  # reads only first excel file
+    dataframe1 = dataframe.active
 
-
-    for i in range(2, dataframe1.max_row+1):
-        for j in range(1, dataframe1.max_column+1):
-            if check[j-2].get()==1 or j==1:
-                src=dataframe1.cell(row=i, column=j).value
+    for i in range(2, dataframe1.max_row + 1):
+        for j in range(1, dataframe1.max_column + 1):
+            if check[j - 2].get() == 1 or j == 1:
+                src = dataframe1.cell(row=i, column=j).value
                 destination_location = destinationLocation.get()
                 if src is None:
                     continue
-                src=src.replace("/", "\\")
-                last_backslash=src.rindex("\\")
-                first_backslash=src.find("\\")
-                folder_substructure=src[first_backslash:last_backslash]
-                destination_location=destination_location.replace("/", "\\")  #D:\\test1\\YUvraj
-                destination_location=destination_location+"\\"+folder_substructure+"\\"    # D:\\test1\\YUvraj\\
-                print(src)
-                print(destination_location)
-                call (["xcopy", f"{src}", f"{destination_location}", "/H/C/I/Y"])
+                src = src.replace("/", "\\")
+                last_backslash = src.rindex("\\")
+                first_backslash = src.find("\\")
+                folder_substructure = src[first_backslash:last_backslash]
+                destination_location = destination_location.replace("/", "\\")
+                destination_location = (
+                    destination_location + "\\" + folder_substructure + "\\"
+                )
+                # pylint: disable=W1510
+                result = subprocess.run(
+                    ["xcopy", f"{src}", f"{destination_location}", "/H/C/I/Y"],
+                    # check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                log_result(src, destination_location, result)
                 # shutil.copy(f, destination_location)
 
     # check in one loop
