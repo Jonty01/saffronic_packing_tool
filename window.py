@@ -1,22 +1,13 @@
 """Create the window and widgets"""
 
-import subprocess
-from tkinter import (
-    END,
-    Tk,
-    filedialog,
-    messagebox,
-    StringVar,
-    IntVar,
-    Button,
-    Entry,
-    Checkbutton,
-    W,
-)
-import csv
 from datetime import datetime
 from pathlib import Path
+import csv
 import os
+import subprocess
+import tkinter as tk
+import tkinter.filedialog
+import tkinter.messagebox
 import openpyxl
 
 # List Of Checkbox Items
@@ -24,7 +15,7 @@ copy_cases = ["Copy Renders", "Copy Source Images"]
 check = []
 
 # Creating object of tk class
-window = Tk()
+window = tk.Tk()
 
 # Setting the title and background color
 # disabling the resizing property
@@ -33,8 +24,8 @@ window.title("Saffronic Packing Tool")
 window.config(background="white")
 
 # Creating tkinter variable
-sourceLocation = StringVar()
-destinationLocation = StringVar()
+sourceLocation = tk.StringVar()
+destinationLocation = tk.StringVar()
 # Store created directories for rollback
 created_directories = []
 
@@ -42,9 +33,9 @@ created_directories = []
 def source_browse():
     """Opening the file-dialog prompting the user to
     select a .xlsx file"""
-    window.sourceText.delete(0, END)
+    window.sourceText.delete(0, tk.END)
     window.file_list = list(
-        filedialog.askopenfilenames(filetypes=[("Excel Files", "*.xlsx")])
+        tkinter.filedialog.askopenfilenames(filetypes=[("Excel Files", "*.xlsx")])
     )
     window.sourceText.insert("0", window.file_list)
 
@@ -53,17 +44,16 @@ def destination_browse():
     """Opening the file-dialog directory prompting
     the user to select destination folder to
     which files are to be copied using the
-    filedialog.askopendirectory() method.
+    tkinter.filedialog.askopendirectory() method.
     Setting initialdir argument is optional"""
-    window.destinationText.delete(0, END)
-    destinationdirectory = filedialog.askdirectory()
+    window.destinationText.delete(0, tk.END)
+    destinationdirectory = tkinter.filedialog.askdirectory()
 
     # Displaying the selected directory in the
-    # window.destinationText Entry using
+    # window.destinationText tk.Entry using
     # window.destinationText.insert()
     # window.destinationText.insert("1", destinationdirectory)
     window.destinationText.insert("0", destinationdirectory)
-    return Path(destinationdirectory)
 
 
 def log_result(src, destination_location, result, operation_type="copy"):
@@ -144,7 +134,8 @@ def copy_file():
                 )
                 log_result(src, destination_location, result)
 
-    messagebox.showinfo("Done", "Operation Completed")
+    window.rollbackButton["state"] = tk.NORMAL
+    tkinter.messagebox.showinfo("Done", "Operation Completed")
 
 
 def rollback():
@@ -169,19 +160,19 @@ def rollback():
             operation_type="rollback",
         )
 
-    messagebox.showinfo("Done", "Rollback Completed")
+    tkinter.messagebox.showinfo("Done", "Rollback Completed")
 
 
 # Create widgets
-source_browseButton = Button(
+source_browseButton = tk.Button(
     window, text="Input Path", command=source_browse, width=15, bg="#90ee90", fg="black"
 )
 source_browseButton.grid(row=2, column=0, pady=15, padx=15)
 
-window.sourceText = Entry(window, width=50, textvariable=sourceLocation)
+window.sourceText = tk.Entry(window, width=50, textvariable=sourceLocation)
 window.sourceText.grid(row=2, column=1, pady=15, padx=15, columnspan=2)
 
-dest_browseButton = Button(
+dest_browseButton = tk.Button(
     window,
     text="Destination Path",
     command=destination_browse,
@@ -191,23 +182,29 @@ dest_browseButton = Button(
 )
 dest_browseButton.grid(row=3, column=0, pady=15, padx=15)
 
-window.destinationText = Entry(window, width=50, textvariable=destinationLocation)
+window.destinationText = tk.Entry(window, width=50, textvariable=destinationLocation)
 window.destinationText.grid(row=3, column=1, pady=15, padx=15, columnspan=2)
 
-window.copyButton = Button(
+window.copyButton = tk.Button(
     window, text="Submit", command=copy_file, width=15, bg="#8FBC8F", fg="black"
 )
 window.copyButton.grid(row=7, column=1, pady=5, padx=5)
 
-window.rollbackButton = Button(
-    window, text="Rollback", command=rollback, width=15, bg="#FFCCCB", fg="black"
+window.rollbackButton = tk.Button(
+    window,
+    text="Rollback",
+    command=rollback,
+    width=15,
+    bg="#FFCCCB",
+    fg="black",
+    state=tk.DISABLED,
 )
 window.rollbackButton.grid(row=7, column=2, pady=5, padx=5)
 
 for x, n in enumerate(copy_cases):
-    check.append(IntVar(window, value=0))
-    cb = Checkbutton(window, text=n, variable=check[x])
-    cb.grid(row=x + 4, column=0, sticky=W, padx=10, pady=10)
+    check.append(tk.IntVar(window, value=0))
+    cb = tk.Checkbutton(window, text=n, variable=check[x])
+    cb.grid(row=x + 4, column=0, sticky=tk.W, padx=10, pady=10)
 
 
 # Defining infinite loop
