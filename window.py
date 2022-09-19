@@ -16,6 +16,7 @@ from tkinter import (
 import csv
 from datetime import datetime
 from pathlib import Path
+import os
 import openpyxl
 
 # List Of Checkbox Items
@@ -34,6 +35,8 @@ window.config(background="white")
 # Creating tkinter variable
 sourceLocation = StringVar()
 destinationLocation = StringVar()
+# Store created directories for rollback
+created_directories = []
 
 
 def source_browse():
@@ -60,9 +63,10 @@ def destination_browse():
     # window.destinationText.insert()
     # window.destinationText.insert("1", destinationdirectory)
     window.destinationText.insert("0", destinationdirectory)
+    return Path(destinationdirectory)
 
 
-def log_result(src, destination_location, result):
+def log_result(src, destination_location, result, operation_type="copy"):
     """Log results of all operations in a csv file"""
 
     log_dir = Path(window.file_list[0]).parent
@@ -73,6 +77,7 @@ def log_result(src, destination_location, result):
             csv_writer.writerow(
                 [
                     "Timestamp",
+                    "Operation Type",
                     "Source",
                     "Destination",
                     "Return code",
@@ -89,8 +94,9 @@ def log_result(src, destination_location, result):
         csv_writer.writerow(
             [
                 datetime.now().isoformat(),
-                src,
-                destination_location,
+                operation_type,
+                str(src),
+                str(destination_location),
                 result.returncode,
                 result.stdout,
                 result.stderr,
@@ -113,29 +119,57 @@ def copy_file():
         for j in range(1, dataframe1.max_column + 1):
             if check[j - 2].get() == 1 or j == 1:
                 src = dataframe1.cell(row=i, column=j).value
-                destination_location = destinationLocation.get()
+                destination_location = Path(destinationLocation.get())
                 if src is None:
                     continue
-                src = src.replace("/", "\\")
-                last_backslash = src.rindex("\\")
-                first_backslash = src.find("\\")
-                folder_substructure = src[first_backslash:last_backslash]
-                destination_location = destination_location.replace("/", "\\")
-                destination_location = (
-                    destination_location + "\\" + folder_substructure + "\\"
+                src = Path(src)
+                folder_substructure = src.parent
+                folder_substructure = list(folder_substructure.parts[1:])
+                # keep note of all directories created
+                created_directories.append(folder_substructure[0])
+                destination_location = Path(
+                    os.path.join(destination_location, *folder_substructure)
                 )
                 # pylint: disable=W1510
                 result = subprocess.run(
-                    ["xcopy", f"{src}", f"{destination_location}", "/H/C/I/Y"],
+                    [
+                        "xcopy",
+                        f"{str(src)}",
+                        f"{str(destination_location)}\\",
+                        "/H/C/I/Y",
+                    ],
                     # check=True,
                     capture_output=True,
                     text=True,
                 )
                 log_result(src, destination_location, result)
-                # shutil.copy(f, destination_location)
 
-    # check in one loop
     messagebox.showinfo("Done", "Operation Completed")
+
+
+def rollback():
+    """Rollback copy operation"""
+
+    for directory_new in created_directories:
+        destination_location = Path(destinationLocation.get())
+        destination_location = destination_location.joinpath(directory_new)
+
+        # pylint: disable=W1510
+        result = subprocess.run(
+            ["rmdir", f"{destination_location}", "/S/Q"],
+            # check=True,
+            capture_output=True,
+            text=True,
+            shell=True,
+        )
+        log_result(
+            destination_location,
+            destination_location,
+            result,
+            operation_type="rollback",
+        )
+
+    messagebox.showinfo("Done", "Rollback Completed")
 
 
 # Create widgets
@@ -165,10 +199,10 @@ window.copyButton = Button(
 )
 window.copyButton.grid(row=7, column=1, pady=5, padx=5)
 
-window.quitButton = Button(
-    window, text="Quit", command=exit, width=15, bg="#FFCCCB", fg="black"
+window.rollbackButton = Button(
+    window, text="Rollback", command=rollback, width=15, bg="#FFCCCB", fg="black"
 )
-window.quitButton.grid(row=7, column=2, pady=5, padx=5)
+window.rollbackButton.grid(row=7, column=2, pady=5, padx=5)
 
 for x, n in enumerate(copy_cases):
     check.append(IntVar(window, value=0))
