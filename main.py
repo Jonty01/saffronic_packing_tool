@@ -19,7 +19,7 @@ window = tk.Tk()
 
 # Setting the title and background color
 # disabling the resizing property
-window.geometry("830x320")
+window.geometry("600x320")
 window.title("Saffronic Packing Tool")
 window.config(background="white")
 
@@ -54,6 +54,8 @@ def destination_browse():
     # window.destinationText.insert()
     # window.destinationText.insert("1", destinationdirectory)
     window.destinationText.insert("0", destinationdirectory)
+    if(len(window.file_list) > 0 and len(destinationdirectory) > 0):
+        window.copyButton["state"] = tk.NORMAL
 
 
 def log_result(src, destination_location, result, operation_type="copy"):
@@ -146,6 +148,7 @@ def rollback():
         destination_location = destination_location.joinpath(directory_new)
 
         # pylint: disable=W1510
+        # /S to delete subdirectories and /Q to suppress confirmation
         result = subprocess.run(
             ["rmdir", f"{destination_location}", "/S/Q"],
             # check=True,
@@ -160,8 +163,7 @@ def rollback():
             operation_type="rollback",
         )
 
-    tkinter.messagebox.showinfo("Done", "Rollback Completed")
-
+    tkinter.messagebox.showinfo("Done", "Operation Reverted")
 
 # Create widgets
 source_browseButton = tk.Button(
@@ -186,20 +188,27 @@ window.destinationText = tk.Entry(window, width=50, textvariable=destinationLoca
 window.destinationText.grid(row=3, column=1, pady=15, padx=15, columnspan=2)
 
 window.copyButton = tk.Button(
-    window, text="Submit", command=copy_file, width=15, bg="#8FBC8F", fg="black"
+    window,
+    text="Submit",
+    command=copy_file,
+    width=15,
+    bg="#8FBC8F",
+    fg="black",
+    state=tk.DISABLED,
 )
-window.copyButton.grid(row=7, column=1, pady=5, padx=5)
+window.copyButton.grid(row=7, column=1, pady=5, padx=1)
 
 window.rollbackButton = tk.Button(
     window,
-    text="Rollback",
+    text="Undo",
     command=rollback,
     width=15,
     bg="#FFCCCB",
     fg="black",
     state=tk.DISABLED,
 )
-window.rollbackButton.grid(row=7, column=2, pady=5, padx=5)
+window.rollbackButton.grid(row=7, column=2, pady=5, padx=1)
+
 
 for x, n in enumerate(copy_cases):
     check.append(tk.IntVar(window, value=0))
