@@ -54,15 +54,15 @@ def destination_browse():
     # window.destinationText.insert()
     # window.destinationText.insert("1", destinationdirectory)
     window.destinationText.insert("0", destinationdirectory)
-    if(len(window.file_list) > 0 and len(destinationdirectory) > 0):
+    if len(window.file_list) > 0 and len(destinationdirectory) > 0:
         window.copyButton["state"] = tk.NORMAL
 
 
 def log_result(src, destination_location, result, operation_type="copy"):
     """Log results of all operations in a csv file"""
-    
+
     log_dir = Path(window.file_list[0]).parent
-    csv_path= f"{log_dir}\\.saffronic_log.csv"
+    csv_path = f"{log_dir}/.saffronic_log.csv"
     # if file does not exist, create it
 
     if Path(csv_path).is_file() is False:
@@ -81,9 +81,7 @@ def log_result(src, destination_location, result, operation_type="copy"):
             )
 
     # open a csv file in the directory where spreadsheet is located
-    with open(
-        csv_path, "a", encoding="utf-8", newline=""
-    ) as log_file:
+    with open(csv_path, "a", encoding="utf-8", newline="") as log_file:
         csv_writer = csv.writer(log_file)
         csv_writer.writerow(
             [
@@ -158,7 +156,7 @@ def rollback():
             shell=True,
         )
         log_dir = Path(window.file_list[0]).parent
-        csv_path= f"{log_dir}\\.saffronic_log.csv"
+        csv_path = f"{log_dir}\\.saffronic_log.csv"
 
         # just try to execute an action (eg.rename) on the file
         # if it is open and running, it will not work
@@ -166,16 +164,17 @@ def rollback():
             try:
                 os.rename(csv_path, csv_path)
             except OSError:
-                message=f"Access-error on file {csv_path} !, Try closing the file"
+                message = f"Access-error on file {csv_path} !, Try closing the file"
                 tkinter.messagebox.showinfo("Error", message)
 
         log_result(
-                    destination_location,
-                    destination_location,
-                    result,
-                    operation_type="rollback",
-                )
+            destination_location,
+            destination_location,
+            result,
+            operation_type="rollback",
+        )
     tkinter.messagebox.showinfo("Done", "Operation Reverted")
+
 
 # Create widgets
 source_browseButton = tk.Button(
