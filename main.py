@@ -60,11 +60,13 @@ def destination_browse():
 
 def log_result(src, destination_location, result, operation_type="copy"):
     """Log results of all operations in a csv file"""
-
+    
     log_dir = Path(window.file_list[0]).parent
+    csv_path= f"{log_dir}\\.saffronic_log.csv"
     # if file does not exist, create it
-    if Path(f"{log_dir}/.saffronic_log.csv").is_file() is False:
-        with open(f"{log_dir}/.saffronic_log.csv", "w", encoding="utf-8") as log_file:
+
+    if Path(csv_path).is_file() is False:
+        with open(csv_path, "w", encoding="utf-8") as log_file:
             csv_writer = csv.writer(log_file)
             csv_writer.writerow(
                 [
@@ -80,7 +82,7 @@ def log_result(src, destination_location, result, operation_type="copy"):
 
     # open a csv file in the directory where spreadsheet is located
     with open(
-        f"{log_dir}/.saffronic_log.csv", "a", encoding="utf-8", newline=""
+        csv_path, "a", encoding="utf-8", newline=""
     ) as log_file:
         csv_writer = csv.writer(log_file)
         csv_writer.writerow(
@@ -109,6 +111,7 @@ def copy_file():
 
     for i in range(2, dataframe1.max_row + 1):
         for j in range(1, dataframe1.max_column + 1):
+            # check for the checkbuttons
             if check[j - 2].get() == 1 or j == 1:
                 src = dataframe1.cell(row=i, column=j).value
                 destination_location = Path(destinationLocation.get())
@@ -142,11 +145,9 @@ def copy_file():
 
 def rollback():
     """Rollback copy operation"""
-
     for directory_new in created_directories:
         destination_location = Path(destinationLocation.get())
         destination_location = destination_location.joinpath(directory_new)
-
         # pylint: disable=W1510
         # /S to delete subdirectories and /Q to suppress confirmation
         result = subprocess.run(
@@ -156,13 +157,24 @@ def rollback():
             text=True,
             shell=True,
         )
-        log_result(
-            destination_location,
-            destination_location,
-            result,
-            operation_type="rollback",
-        )
+        log_dir = Path(window.file_list[0]).parent
+        csv_path= f"{log_dir}\\.saffronic_log.csv"
 
+        # just try to execute an action (eg.rename) on the file
+        # if it is open and running, it will not work
+        if os.path.exists(csv_path):
+            try:
+                os.rename(csv_path, csv_path)
+            except OSError:
+                message=f"Access-error on file {csv_path} !, Try closing the file"
+                tkinter.messagebox.showinfo("Error", message)
+
+        log_result(
+                    destination_location,
+                    destination_location,
+                    result,
+                    operation_type="rollback",
+                )
     tkinter.messagebox.showinfo("Done", "Operation Reverted")
 
 # Create widgets
