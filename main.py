@@ -135,6 +135,18 @@ def copy_file():
                     capture_output=True,
                     text=True,
                 )
+                log_dir = Path(window.file_list[0]).parent
+                csv_path = f"{log_dir}\\.saffronic_log.csv"
+
+                # just try to execute an action (eg.rename) on the file
+                # if it is open and running, it will not work
+                if os.path.exists(csv_path):
+                    try:
+                        os.rename(csv_path, csv_path)
+                    except OSError:
+                        message = f"Access-error on file {csv_path} ! Try closing the file"
+                        tkinter.messagebox.showerror("Error", message)
+                        return
                 log_result(src, destination_location, result)
 
     window.rollbackButton["state"] = tk.NORMAL
@@ -164,8 +176,9 @@ def rollback():
             try:
                 os.rename(csv_path, csv_path)
             except OSError:
-                message = f"Access-error on file {csv_path} !, Try closing the file"
-                tkinter.messagebox.showinfo("Error", message)
+                message = f"Access-error on file {csv_path} ! Try closing the file"
+                tkinter.messagebox.showerror("Error", message)
+                return
 
         log_result(
             destination_location,
