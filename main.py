@@ -144,7 +144,9 @@ def copy_file():
                     try:
                         os.rename(csv_path, csv_path)
                     except OSError:
-                        message = f"Access-error on file {csv_path} ! Try closing the file"
+                        message = (
+                            f"Access-error on file {csv_path} ! Try closing the file"
+                        )
                         tkinter.messagebox.showerror("Error", message)
                         return
                 log_result(src, destination_location, result)
