@@ -5,6 +5,7 @@ from pathlib import Path
 import csv
 import os
 import subprocess
+from subprocess import call
 import tkinter as tk
 import tkinter.filedialog
 import tkinter.messagebox
@@ -28,7 +29,7 @@ sourceLocation = tk.StringVar()
 destinationLocation = tk.StringVar()
 # Store created directories for rollback
 created_directories = []
-
+rem_list = []
 
 def source_browse():
     """Opening the file-dialog prompting the user to
@@ -107,6 +108,19 @@ def copy_file():
     dataframe = openpyxl.load_workbook(file_list[0])  # reads only first excel file
     dataframe1 = dataframe.active
 
+    if len(created_directories) > 0:
+        created_directories.clear()
+        d_dp = ""
+        for fl in rem_list:
+            p = list(fl.parts[0:-1])
+            print("do this:", p)
+            p = Path(os.path.join(*p))
+            if d_dp != p:
+                call (["rmdir", f"{p}", "/S/Q"], shell=True)
+                d_dp = p
+            else:
+                continue
+        rem_list.clear()
     for i in range(2, dataframe1.max_row + 1):
         for j in range(1, dataframe1.max_column + 1):
             # check for the checkbuttons
@@ -117,6 +131,7 @@ def copy_file():
                     continue
                 src = Path(src)
                 folder_substructure = src.parent
+                print(folder_substructure)
                 folder_substructure = list(folder_substructure.parts[1:])
                 # keep note of all directories created
                 created_directories.append(folder_substructure[0])
@@ -124,6 +139,14 @@ def copy_file():
                     os.path.join(destination_location, *folder_substructure)
                 )
                 # pylint: disable=W1510
+                # print(destination_location)
+                src_parts = list(src.parts[1:])
+                rm_file = src_parts[-1]
+                rm = Path(
+                    os.path.join(destination_location, rm_file)
+                )
+                # print(rm)
+                rem_list.append(rm)
                 result = subprocess.run(
                     [
                         "xcopy",
@@ -138,54 +161,65 @@ def copy_file():
                 log_dir = Path(window.file_list[0]).parent
                 csv_path = f"{log_dir}\\.saffronic_log.csv"
 
-                # just try to execute an action (eg.rename) on the file
+                # just try to execute an action (eg. rename) on the file
                 # if it is open and running, it will not work
                 if os.path.exists(csv_path):
                     try:
                         os.rename(csv_path, csv_path)
                     except OSError:
-                        message = f"Access-error on file {csv_path} ! Try closing the file"
+                        message = (
+                            f"Access-error on file {csv_path} ! Try closing the file"
+                        )
                         tkinter.messagebox.showerror("Error", message)
                         return
                 log_result(src, destination_location, result)
+                # print(destination_location)
 
+    print(rem_list)
     window.rollbackButton["state"] = tk.NORMAL
     tkinter.messagebox.showinfo("Done", "Operation Completed")
 
 
 def rollback():
     """Rollback copy operation"""
+    dl_dp = ""
+    print(created_directories)
     for directory_new in created_directories:
         destination_location = Path(destinationLocation.get())
         destination_location = destination_location.joinpath(directory_new)
         # pylint: disable=W1510
         # /S to delete subdirectories and /Q to suppress confirmation
-        result = subprocess.run(
-            ["rmdir", f"{destination_location}", "/S/Q"],
-            # check=True,
-            capture_output=True,
-            text=True,
-            shell=True,
-        )
-        log_dir = Path(window.file_list[0]).parent
-        csv_path = f"{log_dir}\\.saffronic_log.csv"
+        print(destination_location)
+        if(dl_dp != destination_location):
+            result = subprocess.run(
+                ["rmdir", f"{destination_location}", "/S/Q"],
+                # check=True,
+                capture_output=True,
+                text=True,
+                shell=True,
+            )
+            dl_dp = destination_location
+            log_dir = Path(window.file_list[0]).parent
+            csv_path = f"{log_dir}\\.saffronic_log.csv"
 
-        # just try to execute an action (eg.rename) on the file
-        # if it is open and running, it will not work
-        if os.path.exists(csv_path):
-            try:
-                os.rename(csv_path, csv_path)
-            except OSError:
-                message = f"Access-error on file {csv_path} ! Try closing the file"
-                tkinter.messagebox.showerror("Error", message)
-                return
+            # just try to execute an action (eg.rename) on the file
+            # if it is open and running, it will not work
+            if os.path.exists(csv_path):
+                try:
+                    os.rename(csv_path, csv_path)
+                except OSError:
+                    message = f"Access-error on file {csv_path} ! Try closing the file"
+                    tkinter.messagebox.showerror("Error", message)
+                    return
 
-        log_result(
-            destination_location,
-            destination_location,
-            result,
-            operation_type="rollback",
-        )
+            log_result(
+                destination_location,
+                destination_location,
+                result,
+                operation_type="rollback",
+            )
+        else:
+            continue
     tkinter.messagebox.showinfo("Done", "Operation Reverted")
 
 
@@ -238,7 +272,6 @@ for x, n in enumerate(copy_cases):
     check.append(tk.IntVar(window, value=0))
     cb = tk.Checkbutton(window, text=n, variable=check[x])
     cb.grid(row=x + 4, column=0, sticky=tk.W, padx=10, pady=10)
-
 
 # Defining infinite loop
 window.mainloop()
