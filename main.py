@@ -157,37 +157,40 @@ def copy_file():
 
 def rollback():
     """Rollback copy operation"""
+    delete_dp = ""
     for directory_new in created_directories:
         destination_location = Path(destinationLocation.get())
         destination_location = destination_location.joinpath(directory_new)
         # pylint: disable=W1510
         # /S to delete subdirectories and /Q to suppress confirmation
-        result = subprocess.run(
-            ["rmdir", f"{destination_location}", "/S/Q"],
-            # check=True,
-            capture_output=True,
-            text=True,
-            shell=True,
-        )
-        log_dir = Path(window.file_list[0]).parent
-        csv_path = f"{log_dir}\\.saffronic_log.csv"
+        if delete_dp != destination_location:
+            result = subprocess.run(
+                ["rmdir", f"{destination_location}", "/S/Q"],
+                # check=True,
+                capture_output=True,
+                text=True,
+                shell=True,
+            )
+            delete_dp = destination_location
+            log_dir = Path(window.file_list[0]).parent
+            csv_path = f"{log_dir}\\.saffronic_log.csv"
 
-        # just try to execute an action (eg.rename) on the file
-        # if it is open and running, it will not work
-        if os.path.exists(csv_path):
-            try:
-                os.rename(csv_path, csv_path)
-            except OSError:
-                message = f"Access-error on file {csv_path} ! Try closing the file"
-                tkinter.messagebox.showerror("Error", message)
-                return
+            # just try to execute an action (eg.rename) on the file
+            # if it is open and running, it will not work
+            if os.path.exists(csv_path):
+                try:
+                    os.rename(csv_path, csv_path)
+                except OSError:
+                    message = f"Access-error on file {csv_path} ! Try closing the file"
+                    tkinter.messagebox.showerror("Error", message)
+                    return
 
-        log_result(
-            destination_location,
-            destination_location,
-            result,
-            operation_type="rollback",
-        )
+            log_result(
+                destination_location,
+                destination_location,
+                result,
+                operation_type="rollback",
+            )
     tkinter.messagebox.showinfo("Done", "Operation Reverted")
 
 
